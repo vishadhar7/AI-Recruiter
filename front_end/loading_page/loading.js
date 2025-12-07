@@ -17,7 +17,7 @@ const log = (...args) => console.debug("[loading.js]", ...args);
 if (localStorage.getItem("screeningResults")) {
   log("screeningResults found in localStorage → skipping loading page");
   // replace so loading page is NOT left in history
-  window.location.replace("../third_page/index.html");
+  window.location.replace("../third_page/third_page.html");
   // stop executing further
   throw new Error("Redirecting to results because results exist");
 }
@@ -30,13 +30,13 @@ window.addEventListener("pageshow", (event) => {
     // If results already exist — go straight to results
     if (localStorage.getItem("screeningResults")) {
       log("results exist on pageshow → redirecting to results");
-      window.location.replace("../third_page/index.html");
+      window.location.replace("../third_page/third_page.html");
       return;
     }
     // If jobId missing, send user back to the second page (safeguard)
     if (!localStorage.getItem("jobId")) {
       log("jobId missing on pageshow → redirecting to second page");
-      window.location.replace("../second_page/index.html");
+      window.location.replace("../second_page/second_page.html");
       return;
     }
     // Otherwise continue normally (this is a fresh screening in progress)
@@ -55,7 +55,7 @@ try {
     // if results exist, instantly redirect
     if (localStorage.getItem("screeningResults")) {
       log("results exist → replacing to results page");
-      window.location.replace("../third_page/index.html");
+      window.location.replace("../third_page/third_page.html");
       throw new Error("Redirecting from back navigation because results exist");
     }
   }
@@ -68,7 +68,7 @@ try {
 const jobId = localStorage.getItem("jobId");
 if (!jobId) {
   log("No jobId found — sending user back to second page");
-  window.location.replace("../second_page/index.html");
+  window.location.replace("../second_page/second_page.html");
   throw new Error("No jobId - redirecting");
 }
 
@@ -140,7 +140,7 @@ async function startPolling() {
       // if the job id is invalid - go back
       log("Invalid job id returned by status API → redirecting to second page");
       cleanup();
-      window.location.replace("../second_page/index.html");
+      window.location.replace("../second_page/second_page.html");
     } else {
       // still pending; do nothing (animation continues)
       log("Job still pending...");
