@@ -18,9 +18,9 @@ const __dirname = path.resolve();
 // Middleware
 app.use(cors());
 app.use(express.json());
-// Serve all frontend assets (CSS/JS/images)
-app.use(express.static(path.join(__dirname, "front_end")));
 
+// Serve all frontend assets (CSS/JS/images) from front_end root
+app.use(express.static(path.join(__dirname, "front_end")));
 
 // Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "uploads");
@@ -63,7 +63,6 @@ app.post("/api/upload", upload.array("resumes"), (req, res) => {
       `${req.protocol}://${req.get("host")}/uploads/resume_${Date.now()}_${i}.pdf`
   );
 
-  // Save files to disk
   req.files.forEach((file, i) => {
     fs.writeFileSync(path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`), file.buffer);
   });
@@ -72,16 +71,14 @@ app.post("/api/upload", upload.array("resumes"), (req, res) => {
 });
 
 // ==========================
-// SCREEN API (returns jobId immediately)
+// SCREEN API
 // ==========================
 app.post("/api/screen", async (req, res) => {
   try {
     const jobId = Date.now().toString();
     jobs[jobId] = { status: "pending", results: null };
-
-    res.json({ jobId }); // Frontend goes to loading page
-
-    processScreening(jobId, req.body); // background
+    res.json({ jobId });
+    processScreening(jobId, req.body);
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
     res.status(500).json({ error: "Failed to start screening" });
@@ -93,17 +90,12 @@ app.post("/api/screen", async (req, res) => {
 // ==========================
 app.get("/api/status/:jobId", (req, res) => {
   const jobId = req.params.jobId;
-
   if (!jobs[jobId]) return res.json({ status: "invalid_job" });
-
-  res.json({
-    status: jobs[jobId].status,
-    results: jobs[jobId].results,
-  });
+  res.json({ status: jobs[jobId].status, results: jobs[jobId].results });
 });
 
 // ==========================
-// BACKGROUND AI PROCESSOR (EXACT PROMPT)
+// BACKGROUND AI PROCESSOR
 // ==========================
 async function processScreening(jobId, body) {
   try {
@@ -200,11 +192,9 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       return;
     }
 
-    // Sorting & ranking
     parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
     const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
 
-    // Save to MongoDB
     const record = new Screening({
       jobTitle,
       skillsRequired,
@@ -215,7 +205,6 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 
     await record.save();
 
-    // Finish job
     jobs[jobId] = {
       status: "completed",
       results: { rankedCandidates },
@@ -230,52 +219,38 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 }
 
 // ==========================
-// SERVE FRONTEND (LAST)
-// ==========================
-// ==========================
-// SERVE FRONTEND (ALL STATIC ASSETS)
+// SERVE FRONTEND PAGES (KEEPING HTML RELATIVE PATHS INTACT)
 // ==========================
 
-// Serve all files in front_end/landing_page as static
-// ==========================
-// SERVE FRONTEND PAGES
-// ==========================
-
-// Serve landing page
-// Serve static assets per folder
+// Attach routers for each page
+// Serve static assets for each page
 app.use("/landing_page", express.static(path.join(__dirname, "front_end/landing_page")));
 app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page")));
 app.use("/loading_page", express.static(path.join(__dirname, "front_end/loading_page")));
 app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
-app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page"))); // only if exists
+app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
 
-// Serve specific HTML files
-app.get("/landing_page/*", (req, res) => {
+// Serve HTML directly
+app.get("/landing_page", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
-
-app.get("/first_page/*", (req, res) => {
+app.get("/first_page", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/first_page/first_page.html"));
 });
-
-app.get("/loading_page/*", (req, res) => {
+app.get("/loading_page", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/loading_page/loading.html"));
 });
-
-app.get("/second_page/*", (req, res) => {
+app.get("/second_page", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/second_page/second_page.html"));
 });
-
-app.get("/third_page/*", (req, res) => {
+app.get("/third_page", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/third_page/third_page.html"));
 });
 
-
-// Fallback for SPA or unmatched routes: redirect to landing page
+// Fallback route
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
-
 
 // ==========================
 const PORT = process.env.PORT || 5000;
