@@ -1,0 +1,171 @@
+.background-video {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: -1;
+  filter: brightness(0.55);
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  font-family: 'Lexend Deca', sans-serif;
+  overflow: hidden;
+  background: #000;
+}
+
+.welcome-container {
+  text-align: center;
+  z-index: 1;
+}
+
+.welcome-to {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 1.8rem;
+  font-weight: 400;
+  color: #F5F5F5;
+  display: block;
+  opacity: 0;
+  animation: fadeSlideIn 1.5s ease-out forwards;
+  margin-bottom: 0.4rem;
+}
+
+.brand,
+.welcome-subtitle {
+  opacity: 0;
+  animation: fadeZoomIn 1.5s ease-out 1.5s forwards;
+}
+
+.brand {
+  font-family: 'Russo One', sans-serif;
+  font-size: 5rem;
+  font-weight: 900;
+  color: #00CED1;
+  -webkit-text-fill-color: #00CED1;
+  position: relative;
+  letter-spacing: 1.2px;
+  text-shadow:
+    0 0 3px rgba(0, 180, 255, 0.2),
+    0 0 6px rgba(0, 206, 209, 0.25),
+    0 0 10px rgba(0, 206, 209, 0.15);
+  transform-style: preserve-3d;
+  perspective: 800px;
+}
+
+.brand .hire {
+  color: #FFC300;
+  -webkit-text-fill-color: #FFC300;
+}
+
+/* Subtle reflection effect */
+.brand::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 35%;
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15), transparent);
+  background-clip: text;
+  pointer-events: none;
+  mix-blend-mode: screen;
+}
+
+.welcome-subtitle {
+  font-family: 'Lexend Deca', sans-serif;
+  font-size: 1.7rem;
+  font-weight: 500;
+  color: #B0C4DE;
+  margin-top: 18px;
+  transform: translateY(25px);
+}
+
+.button-wrapper {
+  position: fixed;
+  bottom: 60px;
+  width: 100%;
+  text-align: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.next-btn {
+  display: inline-block;
+  pointer-events: auto;
+  background: linear-gradient(135deg, #FFD700 0%, #FFB300 100%);
+  color: #1A1A1A;
+  border: none;
+  padding: 16px 48px;
+  border-radius: 40px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  transition: all 0.5s ease;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  opacity: 0;
+  animation: fadeSlideIn 1.5s ease-out 3.5s forwards, gentlePulse 2s ease-in-out infinite 4.5s;
+}
+
+.next-btn:hover {
+  background: linear-gradient(135deg, #FFE45E 0%, #FFBF00 100%);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* === ANIMATIONS === */
+@keyframes fadeSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeZoomIn {
+  from {
+    opacity: 0;
+    transform: scale(0.9) translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.3);
+  }
+  50% {
+    box-shadow: 0 0 18px rgba(255, 215, 0, 0.5);
+  }
+}
+
+/* === RESPONSIVE DESIGN === */
+@media (min-width: 1200px) {
+  .welcome-to { font-size: 2.2rem; }
+  .brand { font-size: 5.6rem; }
+  .welcome-subtitle { font-size: 2rem; }
+}
+
+@media (max-width: 768px) {
+  .brand { font-size: 3.5rem; }
+  .welcome-to { font-size: 1.5rem; }
+  .welcome-subtitle { font-size: 1.2rem; }
+  .next-btn { padding: 12px 36px; font-size: 1rem; }
+}
+
+

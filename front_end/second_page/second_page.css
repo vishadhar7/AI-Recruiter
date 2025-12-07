@@ -1,0 +1,130 @@
+/* RESET */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* BODY */
+body {
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
+  font-family: 'Lexend Deca', sans-serif;
+
+  background: radial-gradient(circle at top, #0D1B45, #050A1A 70%);
+  color: white;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: fadeIn 0.8s forwards;
+
+  padding-bottom: 10px;
+  padding-top: 0px;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* HEADER */
+.header {
+  width: 100%;
+  padding: 15px 40px;
+}
+
+.logo {
+  height: 32px;
+}
+
+/* MAIN CONTAINER */
+.screening-container {
+  width: 90%;
+  max-width: 520px;
+  margin-top: 5px;
+}
+
+/* TITLE */
+.title {
+  text-align: center;
+  font-size: 2.1rem;
+  color: #00CED1;   /* New color to match the blue background */
+  margin-bottom: 25px;
+}
+
+/* FORM GROUP */
+.form-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 16px;
+}
+
+.form-group label {
+  font-size: 1rem;
+  color: #9AD9FF;
+  margin-bottom: 6px;
+}
+
+/* Extra space above button */
+.extra-bottom-space {
+  margin-bottom: 35px !important;
+}
+
+/* SKILLS BOX — fixed size */
+.skills-box {
+  height: 60px !important;
+  resize: none;
+}
+
+/* INPUT + TEXTAREA */
+.form-group input,
+.form-group textarea {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: white;
+  padding: 12px;
+  font-size: 1rem;
+  border-radius: 10px;
+  outline: none;
+}
+
+/* center wrapper */
+.btn-center {
+  display: flex;
+  justify-content: center;
+}
+
+/* START SCREENING BUTTON — HALF WIDTH */
+.start-btn {
+  background: linear-gradient(135deg, #FFD700 0%, #FFB300 100%);
+  color: #1A1A1A;
+  border: none;
+
+  padding: 14px 0;
+  width: 50%;
+  border-radius: 40px;
+
+  font-size: 1.1rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  transition: all 0.5s ease;
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+  text-align: center;
+}
+
+.start-btn:hover {
+  background: linear-gradient(135deg, #FFE45E 0%, #FFBF00 100%);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+  transform: translateY(-2px);
+}
+
+/* RESPONSIVE */
+@media (max-width: 600px) {
+  .title { font-size: 1.8rem; }
+  .start-btn { width: 70%; }
+}
+
+

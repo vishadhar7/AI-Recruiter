@@ -1,0 +1,115 @@
+/* Reset and box-sizing */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* Body / Full page */
+body {
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden; /* Prevent horizontal scroll */
+  font-family: 'Lexend Deca', sans-serif;
+  background: #0A0F2D;
+  color: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  /* Full-page fade-in */
+  opacity: 0;
+  transform: translateY(20px);
+  animation: pageFadeIn 0.8s forwards;
+}
+
+/* Page fade-in animation */
+@keyframes pageFadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Header */
+.header {
+  width: 100%;
+  padding: 20px 40px;
+  display: flex;
+  justify-content: flex-start; /* Top-left logo */
+  align-items: center;
+}
+
+.logo, .logo-text {
+  height: 30px;
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: #00E5FF;
+}
+
+/* Main Section */
+.container {
+  width: 100%;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-top: 80px;
+}
+
+.title {
+  font-size: 2.4rem;
+  font-weight: 600;
+  margin-bottom: 60px;
+  color: #00E5FF;
+}
+
+/* Buttons Section */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+  align-items: center;
+}
+
+/* Button Style */
+.main-btn {
+  background: linear-gradient(135deg, #00E5FF 0%, #0057FF 100%);
+  color: white;
+  padding: 22px 50px;
+  font-size: 1.3rem;
+  font-weight: 700;
+  border-radius: 45px;
+  border: none;
+  cursor: pointer;
+  width: 320px;
+  max-width: 80vw; /* responsive */
+  transition: all 0.4s ease;
+  box-shadow: 0 0 15px rgba(0, 180, 255, 0.4);
+}
+
+.main-btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.6);
+}
+
+/* Option Container fade-in */
+.option-box {
+  text-align: center;
+  opacity: 0;
+  transform: translateY(30px);
+  animation: fadeInOptions 0.8s forwards;
+}
+
+/* Fade-in animation for options */
+@keyframes fadeInOptions {
+  from { opacity: 0; transform: translateY(30px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Mobile Responsive */
+@media (max-width: 600px) {
+  .main-btn {
+    width: 90%;
+    font-size: 1.1rem;
+  }
+}

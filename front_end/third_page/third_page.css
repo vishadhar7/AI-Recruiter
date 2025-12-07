@@ -1,0 +1,228 @@
+/* ===========================================
+   GOLD PREMIUM DARK THEME (Charcoal Grey)
+=========================================== */
+
+body {
+  background: #1B1B1F;
+  color: #e7e7e7;
+  font-family: 'Lexend Deca', sans-serif;
+  margin: 0;
+  padding: 20px;
+}
+
+/* Header */
+.header {
+  width: 100%;
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+  padding-left: 10px;
+}
+
+.logo {
+  height: 30px;
+}
+
+/* Page Title */
+.title {
+  text-align: center;
+  color: #3F8CFF;
+  font-size: 32px;
+  margin-bottom: 25px;
+}
+
+/* Result Wrapper */
+.results-wrapper {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Rank Card */
+.rank-card {
+  width: 97%;
+  background: #222226;
+  border: 1px solid #2f2f2f;
+  border-radius: 14px;
+  padding: 12px 12px 8px 12px;
+  margin: 12px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Unified line for name + score + missing + recommendation */
+.info-line {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  gap: 20px;
+  padding-left: 16px;
+}
+
+.info-line > div {
+  flex: 1;
+}
+
+/* Name stays left */
+.name-block {
+  flex: 2; 
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.rank-number {
+  font-size: 18px;
+  font-weight: 700;
+  color: #F6C453;
+}
+
+.candidate-name {
+  font-size: 20px;
+  font-weight: 700;
+  color: #F6C453;
+}
+
+/* Score / Missing */
+.score .score-number {
+  color: #F6C453;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+/* Missing Skills */
+.missing-skills {
+  font-size: 16px;
+  text-align: left;
+}
+.missing-skills .label-red {
+  color: #FF7A7A;
+  font-weight: 700;
+}
+.missing-skills .white-text {
+  color: #e7e7e7;
+  font-weight: 400;
+}
+
+/* Recommendation */
+.recommendation {
+  font-size: 14px;
+  font-weight: 700;
+  padding: 2px 12px;
+  border-radius: 6px;
+  text-align: center;
+  color: #000;
+  flex: 0 0 auto !important;
+  width: fit-content !important;
+  white-space: nowrap;
+  margin-right: 16px;
+}
+
+.recommendation.recommended {
+  background-color: #4CAF50;
+}
+
+.recommendation.not-recommended {
+  background-color: #E74C3C;
+}
+
+/* Buttons */
+.buttons-line {
+  margin-top: 8px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.toggle-btn,
+.view-btn {
+  font-size: 13px;
+  font-weight: 700;
+  border: none;
+  padding: 6px 14px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: 0.25s;
+}
+
+.toggle-btn {
+  background: #3ED6C4;
+  color: #000;
+}
+
+.toggle-btn:hover {
+  background: #2AB09A;
+}
+
+.view-btn {
+  background: #3ED6C4;
+  color: #000;
+}
+
+.view-btn:hover {
+  background: #2AB09A;
+}
+
+/* Details section */
+.details-section {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  margin-top: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #cfcfcf;
+}
+
+.details-section.open {
+  max-height: 500px;
+}
+
+/* Contact section */
+.contact-section {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.35s ease;
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  color: #cfcfcf;
+}
+
+.contact-section.open {
+  max-height: 500px;
+}
+
+/* Side headings highlight */
+.side-heading {
+  color: #00FF00; /* highlighted color for headings */
+  font-weight: 600;
+}
+
+.side-heading.remarks {
+  color: #FF4C4C; /* Gold for Remarks heading */
+  font-weight: 600;
+}
+
+.icon {
+  margin-right: 6px;
+}
+
+/* Responsive */
+@media (max-width: 800px) {
+  .info-line {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding-left: 0;
+  }
+
+  .buttons-line {
+    flex-direction: column;
+    gap: 6px;
+  }
+}
