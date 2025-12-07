@@ -215,9 +215,6 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     };
   }
 }
-
-const __dirname = path.resolve();
-
 // Serve all static files in front_end
 app.use(express.static(path.join(__dirname, "front_end")));
 
