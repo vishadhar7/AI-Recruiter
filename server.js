@@ -6,7 +6,6 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import fetch from "node-fetch"; // for Node.js fetch
 
 import Screening from "./models/Screening.js";
 
@@ -235,9 +234,10 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 // ==========================
 app.use(express.static(path.join(__dirname, "front_end")));
 
-app.get("*", (req, res) => {
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
 });
+
 
 // ==========================
 const PORT = process.env.PORT || 5000;
