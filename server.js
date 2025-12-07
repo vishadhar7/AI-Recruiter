@@ -248,7 +248,7 @@ app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page
 app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
 
 // Loading page
-app.use("/loading_page", express.static(path.join(__dirname, "front_end/loading_page")));
+app.use("/loading_page", express.static(path.join(__dirname, "front_end/second_page")));
 
 // Serve third page
 app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
