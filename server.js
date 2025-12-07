@@ -11,13 +11,16 @@ import Screening from "./models/Screening.js";
 
 dotenv.config();
 const app = express();
-
-// Fix __dirname for ES modules
 const __dirname = path.resolve();
 
-// Middleware
+// ==========================
+// MIDDLEWARE
+// ==========================
 app.use(cors());
 app.use(express.json());
+
+// Serve all frontend assets (CSS/JS/images)
+app.use(express.static(path.join(__dirname, "front_end")));
 
 // Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "uploads");
@@ -33,7 +36,9 @@ app.use("/uploads", express.static(uploadDir));
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
-// MongoDB connection
+// ==========================
+// MONGODB CONNECTION
+// ==========================
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -41,11 +46,6 @@ mongoose
   })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err));
-
-// ==========================
-// JOB QUEUE
-// ==========================
-let jobs = {}; // jobId → {status, results}
 
 // ==========================
 // FILE UPLOAD API
@@ -62,23 +62,41 @@ app.post("/api/upload", upload.array("resumes"), (req, res) => {
 
   // Save files to disk
   req.files.forEach((file, i) => {
-    fs.writeFileSync(path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`), file.buffer);
+    fs.writeFileSync(
+      path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`),
+      file.buffer
+    );
   });
 
   res.json({ urls: fileUrls });
 });
 
 // ==========================
-// SCREEN API (returns jobId immediately)
+// SCREEN API (starts job, saves job in MongoDB)
 // ==========================
 app.post("/api/screen", async (req, res) => {
   try {
-    const jobId = Date.now().toString();
-    jobs[jobId] = { status: "pending", results: null };
+    const { jobTitle, skillsRequired, positions, resumes } = req.body;
+    const positionsNum = parseInt(positions, 10);
 
-    res.json({ jobId }); // Frontend goes to loading page
+    // Save a pending job in MongoDB
+    const record = new Screening({
+      jobTitle,
+      skillsRequired,
+      positions: positionsNum,
+      resumes,
+      result: null, // will be updated after processing
+      status: "pending",
+    });
+    await record.save();
 
-    processScreening(jobId, req.body); // background
+    const jobId = record._id.toString();
+
+    // Return jobId immediately
+    res.json({ jobId });
+
+    // Start processing in the background
+    processScreening(jobId, req.body);
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
     res.status(500).json({ error: "Failed to start screening" });
@@ -86,21 +104,27 @@ app.post("/api/screen", async (req, res) => {
 });
 
 // ==========================
-// STATUS CHECK API
+// STATUS CHECK API (fetch job from MongoDB)
 // ==========================
-app.get("/api/status/:jobId", (req, res) => {
-  const jobId = req.params.jobId;
+app.get("/api/status/:jobId", async (req, res) => {
+  try {
+    const jobId = req.params.jobId;
+    const record = await Screening.findById(jobId);
 
-  if (!jobs[jobId]) return res.json({ status: "invalid_job" });
+    if (!record) return res.json({ status: "invalid_job" });
 
-  res.json({
-    status: jobs[jobId].status,
-    results: jobs[jobId].results,
-  });
+    res.json({
+      status: record.status || "completed",
+      results: record.result || null,
+    });
+  } catch (err) {
+    console.error("STATUS CHECK ERROR:", err);
+    res.status(500).json({ error: "Failed to fetch job status" });
+  }
 });
 
 // ==========================
-// BACKGROUND AI PROCESSOR (EXACT PROMPT)
+// BACKGROUND AI PROCESSOR
 // ==========================
 async function processScreening(jobId, body) {
   try {
@@ -158,7 +182,7 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
@@ -174,15 +198,7 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     });
 
     const data = await response.json();
-    const outputText = data.output?.[0]?.content?.[0]?.text;
-
-    if (!outputText) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "AI returned empty output", raw: data },
-      };
-      return;
-    }
+    const outputText = data.output?.[0]?.content?.[0]?.text || "";
 
     const cleanedText = outputText.replace(/^```json/, "").replace(/```$/, "").trim();
 
@@ -190,74 +206,40 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     try {
       parsedJSON = JSON.parse(cleanedText);
     } catch (err) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "Invalid JSON", raw: cleanedText },
-      };
-      return;
+      parsedJSON = { rankedCandidates: [] };
     }
 
     // Sorting & ranking
     parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
     const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
 
-    // Save to MongoDB
-    const record = new Screening({
-      jobTitle,
-      skillsRequired,
-      positions: positionsNum,
-      resumes,
+    // Update MongoDB record
+    await Screening.findByIdAndUpdate(jobId, {
       result: { rankedCandidates },
-    });
-
-    await record.save();
-
-    // Finish job
-    jobs[jobId] = {
       status: "completed",
-      results: { rankedCandidates },
-    };
+    });
   } catch (err) {
     console.error("PROCESSING ERROR:", err);
-    jobs[jobId] = {
+    await Screening.findByIdAndUpdate(jobId, {
+      result: { error: "Processing failed" },
       status: "completed",
-      results: { error: "Processing failed" },
-    };
+    });
   }
 }
 
 // ==========================
-// SERVE FRONTEND (LAST)
-// ==========================
-// ==========================
-// SERVE FRONTEND (ALL STATIC ASSETS)
-// ==========================
-
-// Serve all files in front_end/landing_page as static
-// ==========================
 // SERVE FRONTEND PAGES
 // ==========================
-
-// Serve landing page
 app.use("/landing_page", express.static(path.join(__dirname, "front_end/landing_page")));
-
-// Serve first page
 app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page")));
-
-// Serve second page
 app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
-
-// Loading page
 app.use("/loading_page", express.static(path.join(__dirname, "front_end/second_page")));
-
-// Serve third page
 app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
 
-// Fallback for SPA or unmatched routes: redirect to landing page
+// Fallback route for SPA
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
-
 
 // ==========================
 const PORT = process.env.PORT || 5000;
