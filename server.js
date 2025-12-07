@@ -11,32 +11,24 @@ import Screening from "./models/Screening.js";
 
 dotenv.config();
 const app = express();
-
-// Fix __dirname for ES modules
 const __dirname = path.resolve();
 
-// Middleware
+// ==========================
+// MIDDLEWARE
+// ==========================
 app.use(cors());
 app.use(express.json());
 
-// Serve all frontend assets (CSS/JS/images) from front_end root
-app.use(express.static(path.join(__dirname, "front_end")));
-
-// Ensure uploads folder exists
+// ==========================
+// UPLOADS FOLDER
+// ==========================
 const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("✅ Created uploads folder");
-}
-
-// Serve uploaded files
+if (!fs.existsSync(uploadDir)) fs.mkdirSync(uploadDir);
 app.use("/uploads", express.static(uploadDir));
 
-// Multer memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
-
-// MongoDB connection
+// ==========================
+// MONGODB CONNECTION
+// ==========================
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -44,6 +36,12 @@ mongoose
   })
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err));
+
+// ==========================
+// MULTER SETUP
+// ==========================
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
 
 // ==========================
 // JOB QUEUE
@@ -54,17 +52,12 @@ let jobs = {}; // jobId → {status, results}
 // FILE UPLOAD API
 // ==========================
 app.post("/api/upload", upload.array("resumes"), (req, res) => {
-  if (!req.files || req.files.length === 0) {
-    return res.status(400).json({ error: "No files uploaded" });
-  }
+  if (!req.files || req.files.length === 0) return res.status(400).json({ error: "No files uploaded" });
 
-  const fileUrls = req.files.map(
-    (file, i) =>
-      `${req.protocol}://${req.get("host")}/uploads/resume_${Date.now()}_${i}.pdf`
-  );
-
-  req.files.forEach((file, i) => {
-    fs.writeFileSync(path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`), file.buffer);
+  const fileUrls = req.files.map((file, i) => {
+    const filename = `resume_${Date.now()}_${i}.pdf`;
+    fs.writeFileSync(path.join(uploadDir, filename), file.buffer);
+    return `${req.protocol}://${req.get("host")}/uploads/${filename}`;
   });
 
   res.json({ urls: fileUrls });
@@ -99,7 +92,7 @@ app.get("/api/status/:jobId", (req, res) => {
 // ==========================
 async function processScreening(jobId, body) {
   try {
-    let { jobTitle, skillsRequired, positions, resumes } = body;
+    const { jobTitle, skillsRequired, positions, resumes } = body;
     const positionsNum = parseInt(positions, 10);
 
     const prompt = `
@@ -159,12 +152,7 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.1,
-        input: [
-          {
-            role: "user",
-            content: [{ type: "input_text", text: prompt }],
-          },
-        ],
+        input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
       }),
     });
 
@@ -172,85 +160,63 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     const outputText = data.output?.[0]?.content?.[0]?.text;
 
     if (!outputText) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "AI returned empty output", raw: data },
-      };
+      jobs[jobId] = { status: "completed", results: { error: "AI returned empty output", raw: data } };
       return;
     }
 
     const cleanedText = outputText.replace(/^```json/, "").replace(/```$/, "").trim();
-
     let parsedJSON;
     try {
       parsedJSON = JSON.parse(cleanedText);
     } catch (err) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "Invalid JSON", raw: cleanedText },
-      };
+      jobs[jobId] = { status: "completed", results: { error: "Invalid JSON", raw: cleanedText } };
       return;
     }
 
     parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
     const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
 
-    const record = new Screening({
-      jobTitle,
-      skillsRequired,
-      positions: positionsNum,
-      resumes,
-      result: { rankedCandidates },
-    });
-
+    const record = new Screening({ jobTitle, skillsRequired, positions: positionsNum, resumes, result: { rankedCandidates } });
     await record.save();
 
-    jobs[jobId] = {
-      status: "completed",
-      results: { rankedCandidates },
-    };
+    jobs[jobId] = { status: "completed", results: { rankedCandidates } };
   } catch (err) {
     console.error("PROCESSING ERROR:", err);
-    jobs[jobId] = {
-      status: "completed",
-      results: { error: "Processing failed" },
-    };
+    jobs[jobId] = { status: "completed", results: { error: "Processing failed" } };
   }
 }
 
 // ==========================
-// SERVE FRONTEND PAGES (KEEPING HTML RELATIVE PATHS INTACT)
+// FRONTEND PAGES (with relative paths intact)
 // ==========================
+const pages = [
+  "landing_page",
+  "first_page",
+  "loading_page",
+  "second_page",
+  "third_page",
+];
 
-// Attach routers for each page
-// Serve static assets for each page
-app.use("/landing_page", express.static(path.join(__dirname, "front_end/landing_page")));
-app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page")));
-app.use("/loading_page", express.static(path.join(__dirname, "front_end/loading_page")));
-app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
-app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
+pages.forEach((page) => {
+  const folderPath = path.join(__dirname, "front_end", page);
+  app.use(`/${page}`, express.static(folderPath));
 
-// Serve HTML directly
-app.get("/landing_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
-});
-app.get("/first_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/first_page/first_page.html"));
-});
-app.get("/loading_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/loading_page/loading.html"));
-});
-app.get("/second_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/second_page/second_page.html"));
-});
-app.get("/third_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/third_page/third_page.html"));
+  const htmlFile = page === "first_page" ? "first_page.html" :
+                   page === "loading_page" ? "loading.html" :
+                   page === "second_page" ? "second_page.html" :
+                   page === "third_page" ? "third_page.html" :
+                   "index.html";
+
+  app.get(`/${page}`, (req, res) => {
+    res.sendFile(path.join(folderPath, htmlFile));
+  });
 });
 
-// Fallback route
+// Fallback route for all unmatched paths
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
+
 
 // ==========================
 const PORT = process.env.PORT || 5000;
