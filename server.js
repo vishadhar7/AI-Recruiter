@@ -1,3 +1,4 @@
+// server.js
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -5,8 +6,7 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import fetch from "node-fetch";
-
+import fetch from "node-fetch"; // for Node.js fetch
 
 import Screening from "./models/Screening.js";
 
@@ -30,7 +30,7 @@ if (!fs.existsSync(uploadDir)) {
 // Serve uploaded files
 app.use("/uploads", express.static(uploadDir));
 
-// Multer storage setup
+// Multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
 
@@ -46,50 +46,52 @@ mongoose
 // Root route
 app.get("/", (req, res) => res.send("Smart Hire Backend is running 🚀"));
 
-
-// =====================================================
-// 🔥 JOB QUEUE + STATUS STORAGE
-// =====================================================
+// ==========================
+// JOB QUEUE
+// ==========================
 let jobs = {}; // jobId → {status, results}
 
-
-// =====================================================
-// STEP 1: UPLOAD API (UNCHANGED)
-// =====================================================
+// ==========================
+// FILE UPLOAD API
+// ==========================
 app.post("/api/upload", upload.array("resumes"), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: "No files uploaded" });
   }
 
   const fileUrls = req.files.map(
-    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+    (file, i) =>
+      `${req.protocol}://${req.get("host")}/uploads/resume_${Date.now()}_${i}.pdf`
   );
+
+  // Save files to disk
+  req.files.forEach((file, i) => {
+    fs.writeFileSync(path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`), file.buffer);
+  });
 
   res.json({ urls: fileUrls });
 });
 
-
-// =====================================================
-// STEP 2: SCREEN API → RETURNS jobId IMMEDIATELY
-// =====================================================
+// ==========================
+// SCREEN API (returns jobId immediately)
+// ==========================
 app.post("/api/screen", async (req, res) => {
   try {
     const jobId = Date.now().toString();
     jobs[jobId] = { status: "pending", results: null };
 
-    res.json({ jobId }); // FE switches to loading page
+    res.json({ jobId }); // Frontend goes to loading page
 
-    processScreening(jobId, req.body); // background execution
+    processScreening(jobId, req.body); // background
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
     res.status(500).json({ error: "Failed to start screening" });
   }
 });
 
-
-// =====================================================
-// STEP 3: STATUS CHECK API FOR LOADING PAGE
-// =====================================================
+// ==========================
+// STATUS CHECK API
+// ==========================
 app.get("/api/status/:jobId", (req, res) => {
   const jobId = req.params.jobId;
 
@@ -101,10 +103,9 @@ app.get("/api/status/:jobId", (req, res) => {
   });
 });
 
-
-// =====================================================
-// STEP 4: BACKGROUND AI PROCESSOR (EXACT PROMPT)
-// =====================================================
+// ==========================
+// BACKGROUND AI PROCESSOR (EXACT PROMPT)
+// ==========================
 async function processScreening(jobId, body) {
   try {
     let { jobTitle, skillsRequired, positions, resumes } = body;
@@ -187,10 +188,7 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       return;
     }
 
-    const cleanedText = outputText
-      .replace(/^```json/, "")
-      .replace(/```$/, "")
-      .trim();
+    const cleanedText = outputText.replace(/^```json/, "").replace(/```$/, "").trim();
 
     let parsedJSON;
     try {
@@ -232,18 +230,15 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
   }
 }
 
-
-// =====================================================
-// SERVE FRONTEND (THIS MUST BE LAST)
-// =====================================================
+// ==========================
+// SERVE FRONTEND (LAST)
+// ==========================
 app.use(express.static(path.join(__dirname, "front_end")));
 
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
 });
 
-
-// =====================================================
-app.listen(5000, () =>
-  console.log("🚀 Server running on port 5000")
-);
+// ==========================
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
