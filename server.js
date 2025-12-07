@@ -11,12 +11,15 @@ import Screening from "./models/Screening.js";
 dotenv.config();
 const app = express();
 
+// Fix __dirname for ES modules
+const __dirname = path.resolve();
+
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // Ensure uploads folder exists
-const uploadDir = path.join(path.resolve(), "uploads");
+const uploadDir = path.join(__dirname, "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir);
   console.log("✅ Created uploads folder");
@@ -27,54 +30,54 @@ app.use("/uploads", express.static(uploadDir));
 
 // Multer storage setup
 const storage = multer.memoryStorage();
-
 const upload = multer({ storage });
 
 // MongoDB connection
-mongoose.connect(process.env.MONGO_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true
-})
-.then(() => console.log("✅ MongoDB Connected"))
-.catch(err => console.log("❌ MongoDB Error:", err));
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB Connected"))
+  .catch((err) => console.log("❌ MongoDB Error:", err));
 
 // Root route
 app.get("/", (req, res) => res.send("Smart Hire Backend is running 🚀"));
 
 
 // =====================================================
-//  🔥 JOB QUEUE + STATUS STORAGE (ADDED FOR LOADING PAGE)
+// 🔥 JOB QUEUE + STATUS STORAGE
 // =====================================================
-let jobs = {}; // jobId → { status: "pending" | "completed", results: {...} }
+let jobs = {}; // jobId → {status, results}
 
 
 // =====================================================
-//  STEP 1: Your FILE UPLOAD API (NO CHANGES)
+// STEP 1: UPLOAD API (UNCHANGED)
 // =====================================================
 app.post("/api/upload", upload.array("resumes"), (req, res) => {
   if (!req.files || req.files.length === 0) {
     return res.status(400).json({ error: "No files uploaded" });
   }
 
-  const fileUrls = req.files.map(file => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`);
+  const fileUrls = req.files.map(
+    (file) => `${req.protocol}://${req.get("host")}/uploads/${file.filename}`
+  );
+
   res.json({ urls: fileUrls });
 });
 
 
 // =====================================================
-//  STEP 2: UPDATED /api/screen → returns jobId immediately
+// STEP 2: SCREEN API → RETURNS jobId IMMEDIATELY
 // =====================================================
 app.post("/api/screen", async (req, res) => {
   try {
     const jobId = Date.now().toString();
     jobs[jobId] = { status: "pending", results: null };
 
-    // Immediately send jobId → FE goes to loading page
-    res.json({ jobId });
+    res.json({ jobId }); // FE switches to loading page
 
-    // Process resumes in background
-    processScreening(jobId, req.body);
-
+    processScreening(jobId, req.body); // background execution
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
     res.status(500).json({ error: "Failed to start screening" });
@@ -83,7 +86,7 @@ app.post("/api/screen", async (req, res) => {
 
 
 // =====================================================
-//  STEP 3: NEW /api/status/:jobId for loading page
+// STEP 3: STATUS CHECK API FOR LOADING PAGE
 // =====================================================
 app.get("/api/status/:jobId", (req, res) => {
   const jobId = req.params.jobId;
@@ -92,22 +95,19 @@ app.get("/api/status/:jobId", (req, res) => {
 
   res.json({
     status: jobs[jobId].status,
-    results: jobs[jobId].results || null
+    results: jobs[jobId].results,
   });
 });
 
 
 // =====================================================
-//  STEP 4: BACKGROUND PROCESSOR (runs your ORIGINAL logic)
+// STEP 4: BACKGROUND AI PROCESSOR (EXACT PROMPT)
 // =====================================================
 async function processScreening(jobId, body) {
   try {
     let { jobTitle, skillsRequired, positions, resumes } = body;
     const positionsNum = parseInt(positions, 10);
 
-    // -----------------------------
-    // AI PROMPT — SAME AS YOUR CODE
-    // -----------------------------
     const prompt = `
 You are an AI HR Assistant. For EACH uploaded resume, extract candidate info
 and calculate a matchScore between 0 and 100 using the following weights:
@@ -123,7 +123,7 @@ Also, extract contact details if present:
 - Email address(es)
 - Address
 
-Return STRICT JSON in this format:
+Return STRICT JSON in this EXACT format:
 
 {
   "rankedCandidates": [
@@ -160,33 +160,48 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
+        "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.1,
-        input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }]
-      })
+        input: [
+          {
+            role: "user",
+            content: [{ type: "input_text", text: prompt }],
+          },
+        ],
+      }),
     });
 
     const data = await response.json();
     const outputText = data.output?.[0]?.content?.[0]?.text;
 
     if (!outputText) {
-      jobs[jobId] = { status: "completed", results: { error: "AI returned empty output", raw: data } };
+      jobs[jobId] = {
+        status: "completed",
+        results: { error: "AI returned empty output", raw: data },
+      };
       return;
     }
 
-    const cleanedText = outputText.replace(/^```json/, "").replace(/```$/, "").trim();
+    const cleanedText = outputText
+      .replace(/^```json/, "")
+      .replace(/```$/, "")
+      .trim();
 
     let parsedJSON;
-    try { parsedJSON = JSON.parse(cleanedText); }
-    catch (err) {
-      jobs[jobId] = { status: "completed", results: { error: "Invalid JSON", raw: cleanedText } };
+    try {
+      parsedJSON = JSON.parse(cleanedText);
+    } catch (err) {
+      jobs[jobId] = {
+        status: "completed",
+        results: { error: "Invalid JSON", raw: cleanedText },
+      };
       return;
     }
 
-    // Ranking logic
+    // Sorting & ranking
     parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
     const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
 
@@ -196,33 +211,37 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       skillsRequired,
       positions: positionsNum,
       resumes,
-      result: { rankedCandidates }
+      result: { rankedCandidates },
     });
 
     await record.save();
 
-    // FINISH JOB
+    // Finish job
     jobs[jobId] = {
       status: "completed",
-      results: { rankedCandidates }
+      results: { rankedCandidates },
     };
-
   } catch (err) {
     console.error("PROCESSING ERROR:", err);
     jobs[jobId] = {
       status: "completed",
-      results: { error: "Processing failed" }
+      results: { error: "Processing failed" },
     };
   }
 }
-// Serve all static files in front_end
+
+
+// =====================================================
+// SERVE FRONTEND (THIS MUST BE LAST)
+// =====================================================
 app.use(express.static(path.join(__dirname, "front_end")));
 
-// For all other routes, return the landing page
 app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
 });
 
 
-// ======================
-app.listen(5000, () => console.log("🚀 Server running on port 5000"));
+// =====================================================
+app.listen(5000, () =>
+  console.log("🚀 Server running on port 5000")
+);
