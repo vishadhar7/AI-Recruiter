@@ -42,9 +42,6 @@ mongoose
   .then(() => console.log("✅ MongoDB Connected"))
   .catch((err) => console.log("❌ MongoDB Error:", err));
 
-// Root route
-app.get("/", (req, res) => res.send("Smart Hire Backend is running 🚀"));
-
 // ==========================
 // JOB QUEUE
 // ==========================
@@ -237,7 +234,6 @@ app.use(express.static(path.join(__dirname, "front_end")));
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
 });
-
 
 // ==========================
 const PORT = process.env.PORT || 5000;
