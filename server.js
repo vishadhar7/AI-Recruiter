@@ -5,6 +5,8 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import fetch from "node-fetch";
+
 
 import Screening from "./models/Screening.js";
 
