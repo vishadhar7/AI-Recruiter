@@ -215,6 +215,16 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     };
   }
 }
+import path from "path";
+const __dirname = path.resolve();
+
+// Serve all static files in front_end
+app.use(express.static(path.join(__dirname, "front_end")));
+
+// For all other routes, return the landing page
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
+});
 
 
 // ======================
