@@ -250,25 +250,26 @@ app.use("/second_page", express.static(path.join(__dirname, "front_end/second_pa
 app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page"))); // only if exists
 
 // Serve specific HTML files
-app.get("/landing_page", (req, res) => {
+app.get("/landing_page/*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
 
-app.get("/first_page", (req, res) => {
+app.get("/first_page/*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/first_page/first_page.html"));
 });
 
-app.get("/loading_page", (req, res) => {
+app.get("/loading_page/*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/loading_page/loading.html"));
 });
 
-app.get("/second_page", (req, res) => {
+app.get("/second_page/*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/second_page/second_page.html"));
 });
 
-app.get("/third_page", (req, res) => {
+app.get("/third_page/*", (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/third_page/third_page.html"));
 });
+
 
 // Fallback for SPA or unmatched routes: redirect to landing page
 app.get(/.*/, (req, res) => {
