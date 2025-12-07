@@ -234,9 +234,23 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 // ==========================
 
 // Serve all files in front_end/landing_page as static
-app.use(express.static(path.join(__dirname, "front_end/landing_page")));
+// ==========================
+// SERVE FRONTEND PAGES
+// ==========================
 
-// Fallback route for SPA: send index.html for any unmatched route
+// Serve landing page
+app.use("/landing_page", express.static(path.join(__dirname, "front_end/landing_page")));
+
+// Serve first page
+app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page")));
+
+// Serve second page
+app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
+
+// Serve third page
+app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
+
+// Fallback for SPA or unmatched routes: redirect to landing page
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
