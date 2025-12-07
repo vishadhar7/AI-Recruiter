@@ -229,11 +229,18 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 // ==========================
 // SERVE FRONTEND (LAST)
 // ==========================
-app.use(express.static(path.join(__dirname, "front_end")));
+// ==========================
+// SERVE FRONTEND (ALL STATIC ASSETS)
+// ==========================
 
+// Serve all files in front_end/landing_page as static
+app.use(express.static(path.join(__dirname, "front_end/landing_page")));
+
+// Fallback route for SPA: send index.html for any unmatched route
 app.get(/.*/, (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end", "landing_page", "index.html"));
+  res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
+
 
 // ==========================
 const PORT = process.env.PORT || 5000;
