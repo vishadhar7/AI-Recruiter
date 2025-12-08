@@ -247,55 +247,12 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
   }
 }
 // ==========================
-// Serve frontend directories
+// Serve ALL frontend assets
 // ==========================
+app.use(express.static(path.join(__dirname, "front_end")));
 
-app.use("/landing_page", express.static(path.join(__dirname, "front_end/landing_page")));
-app.use("/first_page", express.static(path.join(__dirname, "front_end/first_page")));
-app.use("/second_page", express.static(path.join(__dirname, "front_end/second_page")));
-app.use("/loading_page", express.static(path.join(__dirname, "front_end/loading_page")));
-app.use("/third_page", express.static(path.join(__dirname, "front_end/third_page")));
-
-// ==========================
-// Serve index.html for EACH PAGE without using *
-// ==========================
-
-// landing page
-app.get("/landing_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
-});
-
-// first page
-app.get("/first_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/first_page/index.html"));
-});
-
-// second page
-app.get("/second_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/second_page/index.html"));
-});
-
-// loading page
-app.get("/loading_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/loading_page/index.html"));
-});
-
-// third page
-app.get("/third_page", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/third_page/index.html"));
-});
-
-// ==========================
-// Fallback for home
-// ==========================
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
-});
-
-// ==========================
-// FINAL FALLBACK
-// ==========================
-app.use((req, res) => {
+// Fallback for unmatched routes → landing page
+app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
 
