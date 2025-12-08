@@ -18,7 +18,6 @@ const __dirname = path.resolve();
 // Middleware
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, "front_end"))); // Serve frontend assets
 
 // Ensure uploads folder exists
 const uploadDir = path.join(__dirname, "uploads");
