@@ -30,6 +30,7 @@ app.use("/uploads", express.static(uploadDir)); // Serve uploaded files
 // Multer memory storage
 const storage = multer.memoryStorage();
 const upload = multer({ storage });
+console.log("🔥 RUNTIME URI:", process.env.MONGO_URI);
 
 // MongoDB connection
 mongoose
