@@ -143,16 +143,22 @@ Weak < 70% or CGPA < 7
 SKILLS:
 Match skillsRequired with resume skills → matchingSkills & missingSkills.
 
-REMARKS (MANDATORY):
-For each candidate write **5–10 lines** covering:
-- Academic strength  
-- College reputation  
-- Technical depth  
-- Skill fit & gaps  
-- Project relevance  
-- Experience weightage  
-- Growth potential  
-- Overall suitability  
+REMARKS (STRICT & MANDATORY):
+For each candidate you MUST generate a remarks field containing 5–10 complete lines of text.
+Never leave remarks empty.
+Never use "", null, [], or {} for remarks.
+Never skip or shorten remarks even if token limit is low.
+Remarks must include:
+- Academic evaluation
+- College reputation
+- Technical skills assessment
+- Project depth & relevance
+- Experience quality
+- Missing skills analysis
+- Growth potential
+- Job suitability
+If you leave remarks empty, missing, or blank, the entire output is considered incorrect.
+ 
 
 OUTPUT RULES:
 - Strict JSON only.
