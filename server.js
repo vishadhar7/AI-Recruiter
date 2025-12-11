@@ -140,6 +140,10 @@ Good 80–89% or CGPA 8–8.9
 Average 70–79% or CGPA 7–7.9  
 Weak < 70% or CGPA < 7
 
+Rules for recommended:
+- recommended: true → candidate is a strong overall fit (matchScore >= 60)
+- recommended: false → candidate is not a strong fit (matchScore < 60)
+
 SKILLS:
 Match skillsRequired with resume skills → matchingSkills & missingSkills.
 
@@ -161,7 +165,6 @@ Remarks must include:
 OUTPUT RULES:
 - Strict JSON only.
 - No explanations.
-- recommended = true if matchScore ≥ 60.
 
 FORMAT:
 {
