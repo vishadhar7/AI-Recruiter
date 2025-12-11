@@ -143,7 +143,7 @@ Weak < 70% or CGPA < 7
 SKILLS:
 Match skillsRequired with resume skills → matchingSkills & missingSkills.
 
-REMARKS (STRICT & MANDATORY):
+ANALYSIS (STRICT & MANDATORY):
 For each candidate you MUST generate a remarks field containing 5–10 complete lines of text.
 Never leave remarks empty.
 Never use "", null, [], or {} for remarks.
@@ -157,14 +157,11 @@ Remarks must include:
 - Missing skills analysis
 - Growth potential
 - Job suitability
-If you leave remarks empty, missing, or blank, the entire output is considered incorrect.
- 
 
 OUTPUT RULES:
 - Strict JSON only.
 - No explanations.
 - recommended = true if matchScore ≥ 60.
-- Never leave remarks empty.
 
 FORMAT:
 {
@@ -185,7 +182,7 @@ FORMAT:
       "matchScore": 0,
       "matchingSkills": [],
       "missingSkills": [],
-      "remarks": "",
+      "analysis": "",
       "recommended": false,
       "phone": "",
       "email": "",
