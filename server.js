@@ -75,8 +75,8 @@ app.post("/api/screen", async (req, res) => {
     jobs[jobId] = { status: "pending", results: null };
 
     res.json({ jobId }); // Frontend goes to loading page
-
     processScreening(jobId, req.body); // Background processing
+
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
     res.status(500).json({ error: "Failed to start screening" });
@@ -109,21 +109,58 @@ async function processScreening(jobId, body) {
     console.log(`📥 Received ${Array.isArray(resumes) ? resumes.length : 0} resumes for "${jobTitle}"`);
 
     const prompt = `
-You are an AI HR Assistant. For EACH uploaded resume, extract candidate info
-and calculate a matchScore between 0 and 100 using the following weights:
+You are an AI HR Assistant. For each resume, extract:
 
-- Skills: 40% → based on matching required skills
-- Experience relevance: 20% → based on alignment with the job title and responsibilities
-- Education: 30% → relevant degrees or certifications
-- Projects: 10% → relevant projects or achievements
+- name  
+- courseName (e.g., B.Tech CSE)  
+- collegeName (university/institution name)  
+- graduation (full text summary)
+- grades: {
+    tenth: "",
+    intermediate: "",
+    btech: ""
+}
+- experience summary  
+- projects list  
+- phone  
+- email  
+- address  
 
-Also, extract contact details if present:
+==========================
+MATCHING LOGIC
+==========================
 
-- Phone number(s)
-- Email address(es)
-- Address
+Calculate matchScore (0–100):
 
-Return STRICT JSON in this EXACT format:
+• Skills Match → 35%  
+• Experience Relevance → 15%  
+• Education → 40%  
+     - 10th grade → 10%  
+     - Intermediate → 10%  
+     - Graduation (Degree + CGPA) → 20%  
+• Projects Relevance → 10%  
+
+Grade Scoring Guide:
+- ≥90% or CGPA ≥ 9 → Excellent  
+- 80–89% or CGPA 8–8.9 → Good  
+- 70–79% or CGPA 7–7.9 → Average  
+- <70% or CGPA < 7 → Weak  
+
+==========================
+REMARKS (VERY DETAILED)
+==========================
+Write deep and professional remarks including:
+- Academic performance evaluation  
+- College reputation  
+- Technical foundation analysis  
+- Project depth & relevance  
+- Skill gaps  
+- Growth potential  
+- Role suitability  
+
+==========================
+OUTPUT FORMAT (STRICT JSON ONLY)
+==========================
 
 {
   "rankedCandidates": [
@@ -131,12 +168,19 @@ Return STRICT JSON in this EXACT format:
       "resumeNumber": 1,
       "name": "",
       "graduation": "",
+      "courseName": "",
+      "collegeName": "",
+      "grades": {
+        "tenth": "",
+        "intermediate": "",
+        "btech": ""
+      },
       "experience": "",
       "projects": [],
       "matchScore": 0,
       "matchingSkills": [],
       "missingSkills": [],
-      "analysis": "",
+      "remarks": "",
       "recommended": false,
       "phone": "",
       "email": "",
@@ -145,9 +189,8 @@ Return STRICT JSON in this EXACT format:
   ]
 }
 
-Rules for recommended:
-- recommended: true → candidate is a strong overall fit (matchScore >= 60)
-- recommended: false → candidate is not a strong fit (matchScore < 60)
+Recommendation Rule:
+recommended = true if matchScore >= 60
 
 Job Title: ${jobTitle}
 Skills Required: ${skillsRequired}
@@ -177,7 +220,7 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     const data = await response.json();
     console.log("🧠 RAW AI RESPONSE:", data);
 
-    // ===== Extract text properly =====
+    // Extract text
     let outputText = "";
     if (data.output && Array.isArray(data.output)) {
       for (const item of data.output) {
@@ -190,8 +233,6 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
         }
       }
     }
-
-    console.log("🧠 RAW outputText:", outputText);
 
     if (!outputText) {
       jobs[jobId] = {
@@ -217,7 +258,14 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
       return;
     }
 
-    // Sorting & ranking
+    // Merge course + college into graduation
+    parsedJSON.rankedCandidates.forEach(c => {
+      if (c.courseName || c.collegeName) {
+        c.graduation = `${c.courseName || ""} | ${c.collegeName || ""}`.trim();
+      }
+    });
+
+    // Sort & select
     parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
     const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
 
@@ -231,13 +279,14 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     });
     await record.save();
 
-    // Finish job
+    // Return to client
     jobs[jobId] = {
       status: "completed",
       results: { rankedCandidates },
     };
 
     console.log(`✅ Screening completed for jobId=${jobId}`);
+
   } catch (err) {
     console.error("PROCESSING ERROR:", err);
     jobs[jobId] = {
@@ -246,17 +295,17 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     };
   }
 }
+
 // ==========================
 // Serve ALL frontend assets
 // ==========================
 app.use(express.static(path.join(__dirname, "front_end")));
 
-// Fallback for unmatched routes → landing page
+// Fallback for unmatched routes
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
 
-
 // ==========================
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
