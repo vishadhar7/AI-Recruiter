@@ -109,59 +109,58 @@ async function processScreening(jobId, body) {
     console.log(`📥 Received ${Array.isArray(resumes) ? resumes.length : 0} resumes for "${jobTitle}"`);
 
     const prompt = `
-You are an AI HR Assistant. For each resume, extract:
+You are an AI HR Screening Assistant.
 
-- name  
-- courseName (e.g., B.Tech CSE)  
-- collegeName (university/institution name)  
-- graduation (full text summary)
-- grades: {
-    tenth: "",
-    intermediate: "",
-    btech: ""
-}
-- experience summary  
-- projects list  
-- phone  
-- email  
-- address  
+TASK:
+Analyze each resume provided. Extract:
+- name
+- courseName
+- collegeName
+- graduation (summarize full education)
+- grades: { tenth, intermediate, btech }
+- experience summary
+- projects (array)
+- phone
+- email
+- address
 
-==========================
-MATCHING LOGIC
-==========================
+MATCH SCORE (0–100):
+Calculate using:
+- Skills Match → 35%
+- Experience Relevance → 15%
+- Education → 40%
+      • 10th → 10%
+      • Intermediate → 10%
+      • Graduation (degree + CGPA) → 20%
+- Projects Relevance → 10%
 
-Calculate matchScore (0–100):
+Grade Quality Guide:
+Excellent ≥ 90% or CGPA ≥ 9  
+Good 80–89% or CGPA 8–8.9  
+Average 70–79% or CGPA 7–7.9  
+Weak < 70% or CGPA < 7
 
-• Skills Match → 35%  
-• Experience Relevance → 15%  
-• Education → 40%  
-     - 10th grade → 10%  
-     - Intermediate → 10%  
-     - Graduation (Degree + CGPA) → 20%  
-• Projects Relevance → 10%  
+SKILLS:
+Match skillsRequired with resume skills → matchingSkills & missingSkills.
 
-Grade Scoring Guide:
-- ≥90% or CGPA ≥ 9 → Excellent  
-- 80–89% or CGPA 8–8.9 → Good  
-- 70–79% or CGPA 7–7.9 → Average  
-- <70% or CGPA < 7 → Weak  
-
-==========================
-REMARKS (VERY DETAILED)
-==========================
-Write deep and professional remarks including:
-- Academic performance evaluation  
+REMARKS (MANDATORY):
+For each candidate write **5–10 lines** covering:
+- Academic strength  
 - College reputation  
-- Technical foundation analysis  
-- Project depth & relevance  
-- Skill gaps  
+- Technical depth  
+- Skill fit & gaps  
+- Project relevance  
+- Experience weightage  
 - Growth potential  
-- Role suitability  
+- Overall suitability  
 
-==========================
-OUTPUT FORMAT (STRICT JSON ONLY)
-==========================
+OUTPUT RULES:
+- Strict JSON only.
+- No explanations.
+- recommended = true if matchScore ≥ 60.
+- Never leave remarks empty.
 
+FORMAT:
 {
   "rankedCandidates": [
     {
@@ -188,10 +187,6 @@ OUTPUT FORMAT (STRICT JSON ONLY)
     }
   ]
 }
-
-Recommendation Rule:
-recommended = true if matchScore >= 60
-
 Job Title: ${jobTitle}
 Skills Required: ${skillsRequired}
 
