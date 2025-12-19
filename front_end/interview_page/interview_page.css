@@ -1,0 +1,321 @@
+/* =========================
+   RESET
+========================= */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+/* =========================
+   BODY
+========================= */
+body {
+  height: 100vh;
+  overflow: hidden;
+
+  background: radial-gradient(circle at top, #0b1228, #020617 70%);
+  font-family: "Lexend Deca", Arial, sans-serif;
+  color: white;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* HEADER */
+.header {
+  width: 100%;
+  padding: 15px 40px;
+  display: flex;
+  align-items: center;
+  position: absolute; /* stays at top */
+  top: 0;
+  left: 0;
+  z-index: 10;
+}
+
+.logo {
+  height: 32px; /* same as other page */
+}
+
+/* =========================
+   WRAPPER
+========================= */
+.interview-wrapper {
+  text-align: center;
+  width: 90%;
+  max-width: 900px;
+  max-height: 95vh;
+}
+
+/* =========================
+   AVATAR
+========================= */
+.avatar-container {
+  position: relative;
+  width: 200px;
+  height: 200px;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  border: 4px solid #00e1ff;
+}
+
+.avatar-container img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  position: relative;
+  z-index: 2;
+}
+
+/* =========================
+   RIPPLE EFFECT
+========================= */
+.ripple {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  border: 2px solid rgba(0,225,255,0.8);
+  opacity: 0;
+  z-index: 1;
+}
+
+.avatar-container.speaking .ripple1 {
+  animation: rippleGlow 2.5s infinite ease-out;
+}
+
+.avatar-container.speaking .ripple2 {
+  animation: rippleGlow 2.5s infinite ease-out 1.2s;
+}
+
+@keyframes rippleGlow {
+  0% {
+    transform: translate(-50%, -50%) scale(1);
+    opacity: 0.7;
+  }
+  100% {
+    transform: translate(-50%, -50%) scale(1.4);
+    opacity: 0;
+  }
+}
+
+/* =========================
+   QUESTION + LISTEN
+========================= */
+.question-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+#questionText {
+  font-size: 24px;
+  line-height: 1.4;
+  max-width: 650px;
+}
+
+/* LISTEN BUTTON */
+.listen-btn {
+  height: 48px;
+  width: 48px;
+  border-radius: 50%;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 20px;
+  line-height: 1;
+
+  cursor: pointer;
+  background: rgba(255,255,255,0.08);
+  color: #9ff7ff;
+  border: 1px solid rgba(255,255,255,0.2);
+}
+.listen-btn {
+  background:
+    radial-gradient(circle at 30% 30%,
+      rgba(56, 189, 248, 0.35),
+      rgba(15, 23, 42, 0.9)
+    );
+  border: 1px solid rgba(56, 189, 248, 0.45);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 248, 0.15),
+    0 8px 18px rgba(2, 6, 23, 0.8),
+    inset 0 0 10px rgba(56, 189, 248, 0.25);
+
+  transition: transform 0.15s ease;
+}
+
+
+.listen-btn:hover {
+  transform: scale(1.06);
+}
+
+
+
+
+/* =========================
+   CONTROLS
+========================= */
+.controls {
+  margin-bottom: 8px;
+}
+
+/* =========================
+   TEXTAREA
+========================= */
+#answerBox {
+  width: 100%;
+  max-width: 700px;
+  height: 130px;
+  margin: 12px auto;
+  padding: 14px;
+
+  border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.2);
+  background: rgba(255,255,255,0.05);
+  color: white;
+  font-size: 15px;
+
+  resize: none;
+  outline: none;
+  overflow-y: auto;
+}
+
+/* =========================
+   BUTTONS
+========================= */
+button {
+  padding: 12px 28px;
+  margin: 8px;
+  border-radius: 30px;
+  border: 1px solid rgba(255,255,255,0.2);
+  font-size: 16px;
+  cursor: pointer;
+
+  background: rgba(255,255,255,0.05);
+  color: #9ff7ff;
+  font-weight: 500;
+
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  background: rgba(255,255,255,0.12);
+  transform: translateY(-1px);
+}
+
+#submitBtn {
+  /* SAME COLORS/GRADIENT AS START BUTTON */
+  background: linear-gradient(135deg, #FFD700 0%, #FFB300 100%);
+  color: #1A1A1A;
+  border: none;
+
+  /* KEEP ORIGINAL SIZE */
+  padding: 12px 28px;   /* same as your previous submit button */
+  font-size: 16px;
+  border-radius: 30px;  /* keep original shape */
+  font-weight: 500;     /* optional, match previous */
+  cursor: pointer;
+  text-align: center;
+
+  /* Box shadow / glow */
+  box-shadow: 0 0 12px rgba(255, 215, 0, 0.4);
+
+  /* Smooth transition for hover / active */
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  will-change: transform;
+}
+
+/* Hover → lift + stronger glow */
+#submitBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(255, 215, 0, 0.6);
+}
+
+/* Active → press effect */
+#submitBtn:active {
+  transform: translateY(0);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* FINISH BUTTON */
+#finishBtn {
+  /* Green gradient */
+  background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+  color: white;           /* White text contrasts well on green */
+  border: none;
+
+  /* KEEP ORIGINAL SIZE */
+  padding: 12px 28px;
+  font-size: 16px;
+  border-radius: 30px;
+  font-weight: 500;     
+  cursor: pointer;
+  text-align: center;
+
+  /* Box shadow / glow */
+  box-shadow: 0 0 12px rgba(34, 197, 94, 0.4);
+
+  /* Smooth transition for hover / active */
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+
+  will-change: transform;
+}
+
+/* Hover → lift + stronger glow */
+#finishBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(34, 197, 94, 0.6);
+}
+
+/* Active → press effect */
+#finishBtn:active {
+  transform: translateY(0);
+  box-shadow: inset 0 3px 6px rgba(0, 0, 0, 0.35);
+}
+
+/* =========================
+   STATUS
+========================= */
+#status {
+  margin-top: 8px;
+  color: #ffd700;
+}
+#greetingText {
+  margin-top: 30px;
+  margin-bottom: 30px; /* increase this value as needed */
+}
+
+#startInterviewBtn {
+  background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%);
+  color: #1A1A1A;       /* bold black/dark text */
+  font-weight: 700;      /* makes the text bold */
+  margin-top: 20px;      /* spacing from greeting */
+  padding: 12px 28px;
+  border-radius: 30px;
+  border: none;
+  font-size: 16px;
+  cursor: pointer;
+  text-align: center;
+
+  /* Optional hover effect */
+  box-shadow: 0 0 12px rgba(0,0,0,0.2);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+#startInterviewBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 0 18px rgba(0,0,0,0.3);
+}
+

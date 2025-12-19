@@ -21,7 +21,7 @@ body {
   animation: fadeIn 0.8s forwards;
 
   padding-bottom: 10px;
-  padding-top: 0px;
+  padding-top: 0px; /* same */
 }
 
 input,
@@ -34,17 +34,17 @@ textarea {
   to { opacity: 1; transform: translateY(0); }
 }
 
-/* HEADER */
+/* HEADER — EXACT SAME */
 .header {
   width: 100%;
   padding: 15px 40px;
 }
 
 .logo {
-  height: 32px;
+  height: 32px;  /* same logo size */
 }
 
-/* MAIN CONTAINER */
+/* CONTAINER */
 .screening-container {
   width: 90%;
   max-width: 520px;
@@ -55,7 +55,7 @@ textarea {
 .title {
   text-align: center;
   font-size: 2.1rem;
-  color: #00CED1;   /* New color to match the blue background */
+  color: #00CED1;
   margin-bottom: 25px;
 }
 
@@ -72,18 +72,21 @@ textarea {
   margin-bottom: 6px;
 }
 
-/* Extra space above button */
+/* TEXTAREAS */
+.jd-box {
+  height: 70px;
+  resize: none;
+}
+.skills-box {
+  height: 45px;
+  resize: none;
+}
+
 .extra-bottom-space {
   margin-bottom: 35px !important;
 }
 
-/* SKILLS BOX — fixed size */
-.skills-box {
-  height: 60px !important;
-  resize: none;
-}
-
-/* INPUT + TEXTAREA */
+/* INPUT + TEXTAREA STYLE — SAME THEME */
 .form-group input,
 .form-group textarea {
   background: rgba(255, 255, 255, 0.08);
@@ -95,20 +98,20 @@ textarea {
   outline: none;
 }
 
-/* center wrapper */
+/* BUTTON CONTAINER */
 .btn-center {
   display: flex;
   justify-content: center;
 }
 
-/* START SCREENING BUTTON — HALF WIDTH */
+/* GOLD BUTTON — SAME SIZE, SAME COLORS */
 .start-btn {
   background: linear-gradient(135deg, #FFD700 0%, #FFB300 100%);
   color: #1A1A1A;
   border: none;
 
   padding: 14px 0;
-  width: 50%;
+  width: 50%;   /* SAME WIDTH */
   border-radius: 40px;
 
   font-size: 1.1rem;
@@ -131,5 +134,3 @@ textarea {
   .title { font-size: 1.8rem; }
   .start-btn { width: 70%; }
 }
-
-

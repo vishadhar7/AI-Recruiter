@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Interview</title>
+
+  <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/interview_page/interview_page.css" />
+</head>
+<!-- HEADER -->
+<header class="header">
+  <img src="/interview_page/logo1.png" class="logo" alt="Smart Hire Logo">
+</header>
+
+<body>
+
+  <div class="interview-wrapper">
+
+    <!-- Avatar -->
+    <div class="avatar-container" id="avatar">
+      <span class="ripple ripple1"></span>
+      <span class="ripple ripple2"></span>
+      <img src="/interview_page/avatar.png" alt="AI Interviewer" />
+    </div>
+
+    <!-- GREETING SCREEN -->
+    <div id="greetingScreen">
+      <h1 id="greetingText"></h1>
+      <button id="startInterviewBtn" type="button">Start Interview</button>
+    </div>
+
+    <!-- INTERVIEW SCREEN -->
+    <div id="interviewScreen" style="display:none;">
+
+      <!-- QUESTION + LISTEN -->
+      <div class="question-row">
+        <h1 id="questionText"></h1>
+        <button id="speakBtn" type="button" class="listen-btn">🔊</button>
+      </div>
+
+      <div class="controls">
+
+        <!-- TEXT ANSWER -->
+        <textarea
+          id="answerBox"
+          placeholder="Type your answer here..."
+        ></textarea>
+
+        <div class="button-row">
+          <button id="submitBtn" type="button">Submit</button>
+          <button id="nextBtn" type="button" style="display:none;">Next</button>
+          <button id="finishBtn" type="button" style="display:none;">Finish</button>
+        </div>
+
+      </div>
+
+      <p id="status"></p>
+    </div>
+
+  </div>
+
+  <script src="/interview_page/interview_page.js"></script>
+</body>
+</html>
