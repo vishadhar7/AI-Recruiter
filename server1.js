@@ -15,7 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // -------------------------
 // CONFIG
 // -------------------------
-const PORT = 5001;
+const PORT = 5000;
 const __dirname = path.resolve();
 
 // OpenAI client
