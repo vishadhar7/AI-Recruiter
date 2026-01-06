@@ -1,4 +1,6 @@
-// server.js
+// ==========================
+// IMPORTS
+// ==========================
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
@@ -6,33 +8,43 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import OpenAI from "openai";
 
 import Screening from "./models/Screening.js";
 
 dotenv.config();
-const app = express();
 
-// Fix __dirname for ES modules
+// ==========================
+// APP INIT
+// ==========================
+const app = express();
+const PORT = process.env.PORT || 5000;
 const __dirname = path.resolve();
 
-// Middleware
+// ==========================
+// MIDDLEWARE
+// ==========================
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: "6mb" }));
+app.use(express.urlencoded({ extended: true }));
 
-// Ensure uploads folder exists
-const uploadDir = path.join(__dirname, "uploads");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir);
-  console.log("✅ Created uploads folder");
+// ==========================
+// OPENAI CLIENT
+// ==========================
+if (!process.env.OPENAI_API_KEY) {
+  console.error("❌ Missing OPENAI_API_KEY");
+  process.exit(1);
 }
-app.use("/uploads", express.static(uploadDir)); // Serve uploaded files
 
-// Multer memory storage
-const storage = multer.memoryStorage();
-const upload = multer({ storage });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// ==========================
+// MONGODB
+// ==========================
 console.log("🔥 RUNTIME URI:", process.env.MONGO_URI);
 
-// MongoDB connection
 mongoose
   .connect(process.env.MONGO_URI, {
     useNewUrlParser: true,
@@ -42,9 +54,22 @@ mongoose
   .catch((err) => console.log("❌ MongoDB Error:", err));
 
 // ==========================
+// UPLOADS
+// ==========================
+const uploadDir = path.join(__dirname, "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir);
+  console.log("✅ Created uploads folder");
+}
+app.use("/uploads", express.static(uploadDir));
+
+const storage = multer.memoryStorage();
+const upload = multer({ storage });
+
+// ==========================
 // JOB QUEUE
 // ==========================
-let jobs = {}; // jobId → {status, results}
+let jobs = {}; // jobId → { status, results }
 
 // ==========================
 // FILE UPLOAD API
@@ -60,22 +85,25 @@ app.post("/api/upload", upload.array("resumes"), (req, res) => {
   );
 
   req.files.forEach((file, i) => {
-    fs.writeFileSync(path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`), file.buffer);
+    fs.writeFileSync(
+      path.join(uploadDir, `resume_${Date.now()}_${i}.pdf`),
+      file.buffer
+    );
   });
 
   res.json({ urls: fileUrls });
 });
 
 // ==========================
-// SCREEN API
+// SCREEN INIT API
 // ==========================
 app.post("/api/screen", async (req, res) => {
   try {
     const jobId = Date.now().toString();
     jobs[jobId] = { status: "pending", results: null };
 
-    res.json({ jobId }); // Frontend goes to loading page
-    processScreening(jobId, req.body); // Background processing
+    res.json({ jobId });
+    processScreening(jobId, req.body);
 
   } catch (err) {
     console.error("SCREEN INIT ERROR:", err);
@@ -88,25 +116,20 @@ app.post("/api/screen", async (req, res) => {
 // ==========================
 app.get("/api/status/:jobId", (req, res) => {
   const jobId = req.params.jobId;
-
   if (!jobs[jobId]) return res.json({ status: "invalid_job" });
 
-  res.json({
-    status: jobs[jobId].status,
-    results: jobs[jobId].results,
-  });
+  res.json(jobs[jobId]);
 });
 
 // ==========================
-// BACKGROUND AI PROCESSOR
+// BACKGROUND SCREENING
 // ==========================
 async function processScreening(jobId, body) {
   try {
     console.log(`🔔 processScreening started for jobId=${jobId}`);
+
     let { jobTitle, skillsRequired, positions, resumes } = body || {};
     const positionsNum = parseInt(positions, 10) || 1;
-
-    console.log(`📥 Received ${Array.isArray(resumes) ? resumes.length : 0} resumes for "${jobTitle}"`);
 
     const prompt = `
 You are an AI HR Screening Assistant.
@@ -193,6 +216,7 @@ FORMAT:
     }
   ]
 }
+
 Job Title: ${jobTitle}
 Skills Required: ${skillsRequired}
 
@@ -203,110 +227,246 @@ ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${process.env.OPENAI_API_KEY}`,
+        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
         model: "gpt-4o-mini",
         temperature: 0.1,
-        input: [
-          {
-            role: "user",
-            content: [{ type: "input_text", text: prompt }],
-          },
-        ],
+        input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
       }),
     });
 
     const data = await response.json();
-    console.log("🧠 RAW AI RESPONSE:", data);
 
-    // Extract text
     let outputText = "";
-    if (data.output && Array.isArray(data.output)) {
+    if (data.output) {
       for (const item of data.output) {
-        if (item.content && Array.isArray(item.content)) {
-          for (const block of item.content) {
-            if (block.type === "output_text" && block.text) {
-              outputText += block.text;
-            }
-          }
+        for (const block of item.content || []) {
+          if (block.type === "output_text") outputText += block.text;
         }
       }
     }
 
-    if (!outputText) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "AI returned empty output", raw: data },
-      };
-      return;
-    }
+    const cleaned = outputText.replace(/```json|```/g, "").trim();
+    const parsed = JSON.parse(cleaned);
 
-    const cleanedText = outputText
-      .replace(/```json/g, "")
-      .replace(/```/g, "")
-      .trim();
-
-    let parsedJSON;
-    try {
-      parsedJSON = JSON.parse(cleanedText);
-    } catch (err) {
-      jobs[jobId] = {
-        status: "completed",
-        results: { error: "Invalid JSON", raw: cleanedText },
-      };
-      return;
-    }
-
-    // Merge course + college into graduation
-    parsedJSON.rankedCandidates.forEach(c => {
+    parsed.rankedCandidates.forEach(c => {
       if (c.courseName || c.collegeName) {
         c.graduation = `${c.courseName || ""} | ${c.collegeName || ""}`.trim();
       }
     });
 
-    // Sort & select
-    parsedJSON.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
-    const rankedCandidates = parsedJSON.rankedCandidates.slice(0, positionsNum);
+    parsed.rankedCandidates.sort((a, b) => b.matchScore - a.matchScore);
+    const rankedCandidates = parsed.rankedCandidates.slice(0, positionsNum);
 
-    // Save to MongoDB
-    const record = new Screening({
+    await new Screening({
       jobTitle,
       skillsRequired,
       positions: positionsNum,
       resumes,
       result: { rankedCandidates },
-    });
-    await record.save();
+    }).save();
 
-    // Return to client
-    jobs[jobId] = {
-      status: "completed",
-      results: { rankedCandidates },
-    };
-
-    console.log(`✅ Screening completed for jobId=${jobId}`);
+    jobs[jobId] = { status: "completed", results: { rankedCandidates } };
 
   } catch (err) {
     console.error("PROCESSING ERROR:", err);
-    jobs[jobId] = {
-      status: "completed",
-      results: { error: "Processing failed" },
-    };
+    jobs[jobId] = { status: "completed", results: { error: "Processing failed" } };
   }
 }
 
+// ======================================================
+// INTERVIEW ASSISTANT ROUTES (UNCHANGED)
+// ======================================================
+app.get("/api/health", (req, res) => {
+  res.json({ ok: true, service: "interview-assistant" });
+});
+
+app.post("/api/interview/generate", async (req, res) => {
+  try {
+    const { jobTitle, jobDesc, skillsReq, resumeText } = req.body;
+    if (!jobTitle || !jobDesc || !skillsReq || !resumeText) {
+      return res.status(400).json({ error: "Missing fields" });
+    }
+
+    const prompt = `
+You are a professional technical interviewer.
+
+Generate exactly 8 interview questions based on:
+- Job Title: ${jobTitle}
+- Job Description: ${jobDesc}
+- Skills Required: ${skillsReq}
+- Resume: ${resumeText}
+
+Rules:
+- Questions must be realistic
+- Increasing difficulty
+- Short and clear
+- No explanations
+
+Return STRICT JSON ONLY:
+{
+  "questions": [
+    { "id": 1, "question": "", "difficulty": "easy|medium|hard" }
+  ]
+}
+`;
+
+    const response = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: prompt,
+      temperature: 0.2,
+      max_output_tokens: 800,
+    });
+
+    const jsonMatch = response.output_text.match(/\{[\s\S]*\}/);
+    res.json(JSON.parse(jsonMatch[0]));
+
+  } catch (err) {
+    res.status(500).json({ error: "Question generation failed" });
+  }
+});
+
+app.post("/api/interview/evaluate", async (req, res) => {
+  try {
+    const { question, answerText, resumeContext } = req.body;
+
+    const prompt = `
+You are an expert interviewer.
+
+Question:
+"${question}"
+
+Candidate Answer:
+"${answerText}"
+
+Resume Context:
+${JSON.stringify(resumeContext || {})}
+
+Return STRICT JSON ONLY:
+{
+  "score": 0,
+  "feedback": "",
+  "strengths": [],
+  "weaknesses": []
+}
+`;
+
+    const response = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: prompt,
+      temperature: 0.1,
+      max_output_tokens: 400,
+    });
+
+    res.json(JSON.parse(response.output_text.match(/\{[\s\S]*\}/)[0]));
+
+  } catch {
+    res.status(500).json({ error: "Evaluation failed" });
+  }
+});
+
+app.post("/api/interview/evaluate-all", async (req, res) => {
+  try {
+    const { questions, answers } = req.body;
+
+    if (
+      !Array.isArray(questions) ||
+      !Array.isArray(answers) ||
+      questions.length !== answers.length
+    ) {
+      return res.status(400).json({ error: "Invalid input" });
+    }
+
+    // Build prompt EXACTLY like server1.js
+    let prompt = "You are an expert interviewer. Evaluate each candidate answer individually:\n\n";
+
+    questions.forEach((q, i) => {
+      prompt += `Question ${i + 1}: "${q}"\nCandidate Answer: "${answers[i]}"\n\n`;
+    });
+
+    prompt += `
+Return STRICT JSON ONLY with an array "evaluations":
+{
+  "evaluations": [
+`;
+
+    questions.forEach((_, i) => {
+      prompt += `    { "score": 0, "feedback": "", "strengths": [], "weaknesses": [] }${i < questions.length - 1 ? "," : ""}\n`;
+    });
+
+    prompt += "  ]\n}";
+
+    const response = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: prompt,
+      temperature: 0.1,
+      max_output_tokens: 2000,
+    });
+
+    const outputText = response.output_text || "";
+    const jsonMatch = outputText.match(/\{[\s\S]*\}/);
+
+    if (!jsonMatch) {
+      return res.status(500).json({
+        error: "Failed to parse batch evaluation",
+        raw: outputText,
+      });
+    }
+
+    const parsed = JSON.parse(jsonMatch[0]);
+    res.json(parsed.evaluations);
+
+  } catch (err) {
+    console.error("❌ Batch evaluation error:", err);
+    res.status(500).json({ error: "Batch evaluation failed" });
+  }
+});
+
+
+app.post("/api/interview/summary", async (req, res) => {
+  try {
+    const prompt = `
+You are an HR interviewer.
+
+Given these interview evaluations:
+${JSON.stringify(req.body.evaluations)}
+
+Return STRICT JSON ONLY:
+{
+  "finalScore": 0,
+  "recommendation": "",
+  "summary": "",
+  "suggestions": []
+}
+`;
+
+    const response = await openai.responses.create({
+      model: "gpt-4o-mini",
+      input: prompt,
+      temperature: 0.2,
+      max_output_tokens: 400,
+    });
+
+    res.json(JSON.parse(response.output_text.match(/\{[\s\S]*\}/)[0]));
+
+  } catch {
+    res.status(500).json({ error: "Summary failed" });
+  }
+});
+
 // ==========================
-// Serve ALL frontend assets
+// FRONTEND
 // ==========================
 app.use(express.static(path.join(__dirname, "front_end")));
-
-// Fallback for unmatched routes
 app.get(/.*/, (req, res) => {
   res.sendFile(path.join(__dirname, "front_end/landing_page/index.html"));
 });
 
 // ==========================
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// START SERVER
+// ==========================
+app.listen(PORT, () => {
+  console.log(`🚀 Unified Server running on http://localhost:${PORT}`);
+});
