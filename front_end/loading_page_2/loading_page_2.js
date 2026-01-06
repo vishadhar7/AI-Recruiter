@@ -86,7 +86,7 @@ async function generateInterview() {
     scanStatus.textContent = "Interview Ready 🎯";
 
     setTimeout(() => {
-      window.location.replace("../interview_page/interview.html");
+      window.location.replace("../interview_page/interview_page.html");
     }, 800);
 
   } catch (err) {
