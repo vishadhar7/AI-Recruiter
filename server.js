@@ -286,47 +286,107 @@ app.get("/api/health", (req, res) => {
 app.post("/api/interview/generate", async (req, res) => {
   try {
     const { jobTitle, jobDesc, skillsReq, resumeText } = req.body;
+
     if (!jobTitle || !jobDesc || !skillsReq || !resumeText) {
       return res.status(400).json({ error: "Missing fields" });
     }
 
     const prompt = `
-You are a professional technical interviewer.
+You are a senior technical interviewer.
 
-Generate exactly 8 interview questions based on:
-- Job Title: ${jobTitle}
-- Job Description: ${jobDesc}
-- Skills Required: ${skillsReq}
-- Resume: ${resumeText}
+STEP 1 — ANALYZE RESUME:
+Determine:
+- Candidate full name
+- Candidate domain: software / non-software
+- Skills mentioned in resume
+- Projects listed
+- Extra-curricular activities
+- Certifications / achievements (if any)
 
-Rules:
-- Questions must be realistic
+STEP 2 — SKILL MATCHING:
+Compare:
+- Required Skills: ${skillsReq}
+- Resume Skills
+
+Identify:
+- matchedSkills
+- missingSkills
+
+STEP 3 — QUESTION GENERATION RULES:
+Generate EXACTLY 10 interview questions.
+
+MANDATORY STRUCTURE:
+1️⃣ Question 1 → Candidate self-introduction
+2️⃣ Questions 2–4 → Skill-based questions  
+   - If skill exists → depth-based
+   - If skill missing → fundamentals
+3️⃣ Question 5 → Programming question ONLY IF resume is software-related
+4️⃣ Questions 6–7 → Questions from projects mentioned in resume
+5️⃣ Question 8 → Extra-curricular / leadership / teamwork
+6️⃣ Question 9 → Question from certifications / achievements / internships (if none, ask learning attitude)
+7️⃣ Question 10 → Scenario or problem-solving question related to job role
+
+RULES:
+- Questions must be clear and realistic
 - Increasing difficulty
-- Short and clear
 - No explanations
+- Do NOT invent skills or projects
+- Programming question must be language/tech from resume
 
-Return STRICT JSON ONLY:
+OUTPUT:
+STRICT JSON ONLY
+
+FORMAT:
 {
+  "resumeAnalysis": {
+    "candidateName": "",
+    "domain": "software | non-software",
+    "matchedSkills": [],
+    "missingSkills": [],
+    "projectsFound": [],
+    "extraCurricular": []
+  },
   "questions": [
-    { "id": 1, "question": "", "difficulty": "easy|medium|hard" }
+    { "id": 1, "question": "", "category": "introduction", "difficulty": "easy" },
+    { "id": 2, "question": "", "category": "skills", "difficulty": "easy" },
+    { "id": 3, "question": "", "category": "skills", "difficulty": "medium" },
+    { "id": 4, "question": "", "category": "skills", "difficulty": "medium" },
+    { "id": 5, "question": "", "category": "programming", "difficulty": "medium" },
+    { "id": 6, "question": "", "category": "projects", "difficulty": "medium" },
+    { "id": 7, "question": "", "category": "projects", "difficulty": "hard" },
+    { "id": 8, "question": "", "category": "extra-curricular", "difficulty": "easy" },
+    { "id": 9, "question": "", "category": "achievements", "difficulty": "medium" },
+    { "id": 10, "question": "", "category": "scenario", "difficulty": "hard" }
   ]
 }
+
+JOB TITLE: ${jobTitle}
+JOB DESCRIPTION: ${jobDesc}
+
+RESUME:
+${resumeText}
 `;
 
     const response = await openai.responses.create({
       model: "gpt-4o-mini",
       input: prompt,
       temperature: 0.2,
-      max_output_tokens: 800,
+      max_output_tokens: 1200,
     });
 
     const jsonMatch = response.output_text.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      return res.status(500).json({ error: "Failed to parse interview questions" });
+    }
+
     res.json(JSON.parse(jsonMatch[0]));
 
   } catch (err) {
-    res.status(500).json({ error: "Question generation failed" });
+    console.error("Interview generation error:", err);
+    res.status(500).json({ error: "Interview generation failed" });
   }
 });
+
 
 app.post("/api/interview/evaluate", async (req, res) => {
   try {

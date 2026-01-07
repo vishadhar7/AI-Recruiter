@@ -40,8 +40,15 @@ document.addEventListener("DOMContentLoaded", () => {
   // ================================
   // GREETING
   // ================================
-  const greeting = localStorage.getItem("greetingText") ||
-    "Hello Candidate! I am your AI Interviewer. Click Start to begin.";
+  const candidateName =
+  localStorage.getItem("candidateName") || "Candidate";
+
+  const interviewerName = "Vishadhar Reddy";
+
+  const greeting = `Hello ${candidateName}! 
+  I am ${interviewerName}, and I will be your AI interviewer today. 
+  Relax and answer confidently. Click Start to begin your interview.`;
+
   greetingText.textContent = greeting;
   speakText(greeting);
 

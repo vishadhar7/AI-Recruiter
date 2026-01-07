@@ -72,7 +72,10 @@ async function generateInterview() {
       JSON.stringify(data.questions.map(q => q.question))
     );
     localStorage.setItem("interviewSessionId", data.sessionId);
-
+    localStorage.setItem(
+      "candidateName",
+      data.resumeAnalysis?.candidateName || "Candidate"
+    );
     // ===============================
     // COMPLETE LOADING
     // ===============================
