@@ -8,7 +8,7 @@ import cors from "cors";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
-import OpenAI from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 
 import Screening from "./models/Screening.js";
 
@@ -29,16 +29,15 @@ app.use(express.json({ limit: "6mb" }));
 app.use(express.urlencoded({ extended: true }));
 
 // ==========================
-// OPENAI CLIENT
+// GEMINI CLIENT
 // ==========================
-if (!process.env.OPENAI_API_KEY) {
-  console.error("❌ Missing OPENAI_API_KEY");
+if (!process.env.GEMINI_API_KEY) {
+  console.error("❌ Missing GEMINI_API_KEY");
   process.exit(1);
 }
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 // ==========================
 // MONGODB
@@ -224,29 +223,8 @@ Resumes:
 ${resumes.map((r, i) => `Resume ${i + 1}:\n${r}`).join("\n\n")}
 `;
 
-    const response = await fetch("https://api.openai.com/v1/responses", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${process.env.OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.1,
-        input: [{ role: "user", content: [{ type: "input_text", text: prompt }] }],
-      }),
-    });
-
-    const data = await response.json();
-
-    let outputText = "";
-    if (data.output) {
-      for (const item of data.output) {
-        for (const block of item.content || []) {
-          if (block.type === "output_text") outputText += block.text;
-        }
-      }
-    }
+    const result = await model.generateContent(prompt);
+    const outputText = result.response.text();
 
     const cleaned = outputText.replace(/```json|```/g, "").trim();
     const parsed = JSON.parse(cleaned);
@@ -367,14 +345,9 @@ RESUME:
 ${resumeText}
 `;
 
-    const response = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: prompt,
-      temperature: 0.2,
-      max_output_tokens: 1200,
-    });
+    const result = await model.generateContent(prompt);
+    const jsonMatch = result.response.text().match(/\{[\s\S]*\}/);
 
-    const jsonMatch = response.output_text.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
       return res.status(500).json({ error: "Failed to parse interview questions" });
     }
@@ -413,14 +386,8 @@ Return STRICT JSON ONLY:
 }
 `;
 
-    const response = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: prompt,
-      temperature: 0.1,
-      max_output_tokens: 400,
-    });
-
-    res.json(JSON.parse(response.output_text.match(/\{[\s\S]*\}/)[0]));
+    const result = await model.generateContent(prompt);
+    res.json(JSON.parse(result.response.text().match(/\{[\s\S]*\}/)[0]));
 
   } catch {
     res.status(500).json({ error: "Evaluation failed" });
@@ -439,7 +406,6 @@ app.post("/api/interview/evaluate-all", async (req, res) => {
       return res.status(400).json({ error: "Invalid input" });
     }
 
-    // Build prompt EXACTLY like server1.js
     let prompt = "You are an expert interviewer. Evaluate each candidate answer individually:\n\n";
 
     questions.forEach((q, i) => {
@@ -458,14 +424,8 @@ Return STRICT JSON ONLY with an array "evaluations":
 
     prompt += "  ]\n}";
 
-    const response = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: prompt,
-      temperature: 0.1,
-      max_output_tokens: 2000,
-    });
-
-    const outputText = response.output_text || "";
+    const result = await model.generateContent(prompt);
+    const outputText = result.response.text() || "";
     const jsonMatch = outputText.match(/\{[\s\S]*\}/);
 
     if (!jsonMatch) {
@@ -502,14 +462,8 @@ Return STRICT JSON ONLY:
 }
 `;
 
-    const response = await openai.responses.create({
-      model: "gpt-4o-mini",
-      input: prompt,
-      temperature: 0.2,
-      max_output_tokens: 400,
-    });
-
-    res.json(JSON.parse(response.output_text.match(/\{[\s\S]*\}/)[0]));
+    const result = await model.generateContent(prompt);
+    res.json(JSON.parse(result.response.text().match(/\{[\s\S]*\}/)[0]));
 
   } catch {
     res.status(500).json({ error: "Summary failed" });
