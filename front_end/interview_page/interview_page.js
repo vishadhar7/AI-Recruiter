@@ -128,7 +128,7 @@ document.addEventListener("DOMContentLoaded", () => {
     statusText.style.color = "red";
 
     try {
-      const res = await fetch("https://smart-hire-nao3.onrender.com/api/interview/evaluate-all", {
+      const res = await fetch("https://ai-recruiter-9i96.onrender.com/api/interview/evaluate-all", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ questions, answers })

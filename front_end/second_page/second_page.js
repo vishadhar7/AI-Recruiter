@@ -64,7 +64,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
       // Send to backend API
-      const response = await fetch("https://smart-hire-nao3.onrender.com/api/screen", {
+      const response = await fetch("https://ai-recruiter-9i96.onrender.com/api/screen", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ jobTitle, skillsRequired, positions, resumes })

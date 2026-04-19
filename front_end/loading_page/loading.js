@@ -96,7 +96,7 @@ let progress = 0;
 
 async function checkStatusOnce() {
   try {
-    const resp = await fetch(`https://smart-hire-nao3.onrender.com/api/status/${jobId}`, { cache: "no-store" });
+    const resp = await fetch(`https://ai-recruiter-9i96.onrender.com/api/status/${jobId}`, { cache: "no-store" });
     if (!resp.ok) {
       log("Status fetch failed status:", resp.status);
       return null;

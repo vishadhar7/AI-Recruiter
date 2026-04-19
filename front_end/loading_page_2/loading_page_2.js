@@ -50,7 +50,7 @@ async function generateInterview() {
     };
 
     const response = await fetch(
-      "https://smart-hire-nao3.onrender.com/api/interview/generate",
+      "https://ai-recruiter-9i96.onrender.com/api/interview/generate",
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
