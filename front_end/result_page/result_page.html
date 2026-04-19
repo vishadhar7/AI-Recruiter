@@ -3,36 +3,59 @@
 <head>
   <meta charset="UTF-8" />
   <title>Interview Results</title>
+
   <link href="https://fonts.googleapis.com/css2?family=Lexend+Deca:wght@300;400;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="/result_page/result_page.css">
+  <link rel="stylesheet" href="result_page.css">
 </head>
 <body>
 
   <div class="results-container">
-    <h1>📊 Interview Analysis</h1>
 
+    <h1 class="title">Interview Analysis</h1>
+
+    <!-- SCORE SECTION -->
     <div class="score-box">
-      <h2 id="finalScore">Score: --</h2>
-      <h3 id="recommendation"></h3>
+      <h2 class="score-heading">Final Interview Score</h2>
+      <div class="score-text">
+        <span id="finalScore">--</span>
+      </div>
+      <span id="recommendation" class="badge"></span>
     </div>
 
+    <!-- SUMMARY -->
     <div class="summary">
-      <h3>Overall Summary</h3>
+      <h3 class="section-heading">Overall Summary</h3>
       <p id="summaryText"></p>
     </div>
 
+    <!-- SUGGESTIONS -->
     <div class="suggestions">
-      <h3>Improvement Suggestions</h3>
+      <h3 class="section-heading">Improvement Suggestions</h3>
       <ul id="suggestionsList"></ul>
     </div>
 
-    <div class="evaluations">
-      <h3>Question-wise Evaluation</h3>
+    <!-- VIEW BUTTON -->
+    <div class="btn-wrapper">
+      <button class="next-btn" id="viewAnalysisBtn">
+        View Detailed Analysis
+      </button>
+    </div>
+
+    <!-- QUESTION-WISE ANALYSIS -->
+    <div class="evaluations hidden" id="detailedAnalysis">
+      <h3 class="section-heading">Question-wise Evaluation</h3>
       <div id="evaluationCards"></div>
+
+      <!-- HIDE BUTTON AT END -->
+      <div class="btn-wrapper end-btn">
+        <button class="next-btn secondary" id="hideAnalysisBtn">
+          Hide Analysis
+        </button>
+      </div>
     </div>
 
   </div>
 
-  <script src="/result_page/result_page.js"></script>
+  <script src="result_page.js"></script>
 </body>
 </html>
