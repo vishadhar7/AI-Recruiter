@@ -6,6 +6,7 @@ Smart Hire is a full-stack web application designed to **automate and enhance th
 
 ## 💻 GitHub Repository
 🔗 https://github.com/vishadhar7/AI-Recruiter 
+DEMO LINK: https://ai-recruiter-9i96.onrender.com
 
 ---
 
